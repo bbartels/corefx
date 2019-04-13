@@ -118,13 +118,13 @@ namespace System.Transactions
 
             // Extract the transaction guid from the propagation token to see if we already have a
             // transaction object for the transaction.
-            byte[] guidByteArray = new byte[16];
+            Span<byte> guidByteArray = stackalloc byte[16];
             for (int i = 0; i < guidByteArray.Length; i++)
             {
                 // In a cookie, the transaction guid is preceeded by a signature guid.
                 guidByteArray[i] = cookie[i + 16];
             }
-            Guid txId = new Guid(guidByteArray);
+            var txId = new Guid(guidByteArray);
 
             // First check to see if there is a promoted LTM transaction with the same ID.  If there
             // is, just return that.
@@ -195,7 +195,7 @@ namespace System.Transactions
 
             // Extract the transaction guid from the propagation token to see if we already have a
             // transaction object for the transaction.
-            byte[] guidByteArray = new byte[16];
+            Span<byte> guidByteArray = stackalloc byte[16];
             for (int i = 0; i < guidByteArray.Length; i++)
             {
                 // In a propagation token, the transaction guid is preceeded by two version DWORDs.
