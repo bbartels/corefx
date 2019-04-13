@@ -200,10 +200,13 @@ namespace System.DirectoryServices
                 if (guid.Length == 32)
                 {
                     // oddly, the value comes back as a string with no dashes from LDAP
-                    byte[] intGuid = new byte[16];
+                    Span<byte> intGuid = stackalloc byte[16];
+                    Span<char> indices = stackalloc char[2];
                     for (int j = 0; j < 16; j++)
                     {
-                        intGuid[j] = Convert.ToByte(new string(new char[] { guid[j * 2], guid[j * 2 + 1] }), 16);
+                        indices[0] = guid[j * 2];
+                        indices[1] = guid[j * 2 + 1];
+                        intGuid[j] = Convert.ToByte(new string(indices), 16);
                     }
                     return new Guid(intGuid);
                     // return new Guid(guid.Substring(0, 8) + "-" + guid.Substring(8, 4) + "-" + guid.Substring(12, 4) + "-" + guid.Substring(16, 4) + "-" + guid.Substring(20));

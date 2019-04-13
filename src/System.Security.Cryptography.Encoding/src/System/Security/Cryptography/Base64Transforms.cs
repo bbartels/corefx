@@ -5,6 +5,7 @@
 // This file contains two ICryptoTransforms: ToBase64Transform and FromBase64Transform
 // they may be attached to a CryptoStream in either read or write mode
 
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace System.Security.Cryptography
@@ -49,15 +50,15 @@ namespace System.Security.Cryptography
             return ConvertToBase64(inputBuffer, inputOffset, inputCount);
         }
 
-        private byte[] ConvertToBase64(byte[] inputBuffer, int inputOffset, int inputCount)
+        private static byte[] ConvertToBase64(byte[] inputBuffer, int inputOffset, int inputCount)
         {
-            char[] temp = new char[4];
-            Convert.ToBase64CharArray(inputBuffer, inputOffset, inputCount, temp, 0);
-            byte[] tempBytes = Encoding.ASCII.GetBytes(temp);
-            if (tempBytes.Length != 4)
+            Span<char> temp = stackalloc char[4];
+            Convert.TryToBase64Chars(inputBuffer.AsSpan(inputOffset, inputCount), temp, out int _);
+            Span<byte> bytes = stackalloc byte[4];
+            if (Encoding.ASCII.GetBytes(temp, bytes) != 4)
                 throw new CryptographicException(SR.Cryptography_SSE_InvalidDataSize);
 
-            return tempBytes;
+            return bytes.ToArray();
         }
 
         private static void ValidateTransformBlock(byte[] inputBuffer, int inputOffset, int inputCount)

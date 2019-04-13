@@ -24,6 +24,9 @@ namespace Internal.Cryptography.Pal
     {
         const string BCRYPT_ECC_CURVE_NAME_PROPERTY = "ECCCurveName";
         const string BCRYPT_ECC_PARAMETERS_PROPERTY = "ECCParameters";
+        const int DSS_Q_LEN = 20;
+
+        private static readonly byte[] EmptyBuffer = new byte[DSS_Q_LEN];
 
         public AsymmetricAlgorithm DecodePublicKey(Oid oid, byte[] encodedKeyValue, byte[] encodedParameters, ICertificatePal certificatePal)
         {
@@ -198,7 +201,6 @@ namespace Internal.Cryptography.Pal
             if (cbKey == 0)
                 throw ErrorCode.NTE_BAD_PUBLIC_KEY.ToCryptographicException();
 
-            const int DSS_Q_LEN = 20;
             int capacity = 8 /* sizeof(CAPI.BLOBHEADER) */ + 8 /* sizeof(CAPI.DSSPUBKEY) */ +
                         cbKey + DSS_Q_LEN + cbKey + cbKey + 24 /* sizeof(CAPI.DSSSEED) */;
 
@@ -225,7 +227,7 @@ namespace Internal.Cryptography.Pal
 
             bw.Write(q);
             if (DSS_Q_LEN > cb)
-                bw.Write(new byte[DSS_Q_LEN - cb]);
+                bw.Write(EmptyBuffer.AsSpan(..DSS_Q_LEN - cb));
 
             // rgbG[cbKey]
             cb = g.Length;
@@ -234,7 +236,7 @@ namespace Internal.Cryptography.Pal
 
             bw.Write(g);
             if (cbKey > cb)
-                bw.Write(new byte[cbKey - cb]);
+                bw.Write(EmptyBuffer.AsSpan(..cbKey - cb));
 
             // rgbY[cbKey]
             cb = decodedKeyValue.Length;
@@ -243,11 +245,11 @@ namespace Internal.Cryptography.Pal
 
             bw.Write(decodedKeyValue);
             if (cbKey > cb)
-                bw.Write(new byte[cbKey - cb]);
+                bw.Write(EmptyBuffer.AsSpan(..cbKey - cb));
 
             // DSSSEED: set counter to 0xFFFFFFFF to indicate not available
             bw.Write((uint)0xFFFFFFFF);
-            bw.Write(new byte[20]);
+            bw.Write(EmptyBuffer.AsSpan(..DSS_Q_LEN));
 
             return keyBlob.ToArray();
         }
