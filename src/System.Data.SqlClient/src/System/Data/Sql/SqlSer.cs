@@ -194,7 +194,7 @@ namespace Microsoft.SqlServer.Server
         {
         }
 
-        private void DontDoIt()
+        private static void DontDoIt()
         {
             throw new Exception(SR.GetString(SR.Sql_InternalError));
         }
@@ -207,14 +207,8 @@ namespace Microsoft.SqlServer.Server
 
         public override long Position
         {
-            get
-            {
-                return _size;
-            }
-            set
-            {
-                _size = value;
-            }
+            get => _size;
+            set => _size = value;
         }
 
         public override long Length => _size;
@@ -243,6 +237,11 @@ namespace Microsoft.SqlServer.Server
         public override void Write(byte[] buffer, int offset, int count)
         {
             _size += count;
+        }
+
+        public override void Write(ReadOnlySpan<byte> buffer)
+        {
+            _size += buffer.Length;
         }
     }
 }
