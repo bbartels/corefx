@@ -862,20 +862,7 @@ namespace System.Xml
             DiagnosticUtility.DebugAssert(_type == ValueHandleType.EscapedUTF8, "");
             return _bufferReader.GetEscapedString(_offset, _length);
         }
-        private string GetCharText()
-        {
-            int ch = GetChar();
-            if (ch > char.MaxValue)
-            {
-                SurrogateChar surrogate = new SurrogateChar(ch);
-                Span<char> chars = stackalloc char[2] { surrogate.HighChar, surrogate.LowChar };
-                return new string(chars);
-            }
-            else
-            {
-                return ((char)ch).ToString();
-            }
-        }
+        private string GetCharText() => char.ConvertFromUtf32(GetChar());
 
         private int GetChar()
         {

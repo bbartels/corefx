@@ -758,13 +758,15 @@ namespace System.IO
 
         // Reads one byte from the stream by calling Read(byte[], int, int). 
         // Will return an unsigned byte cast to an int or -1 on end of stream.
+        // This implementation does not perform well because it allocates a new
+        // byte[] each time you call it, and should be overridden by any 
+        // subclass that maintains an internal buffer.  Then, it can help perf
+        // significantly for people who are reading one byte at a time.
         public virtual int ReadByte()
         {
-            Span<byte> oneByteSpan = stackalloc byte[1];
-            int r = Read(oneByteSpan);
-            if (r == 0)
-                return -1;
-            return oneByteSpan[0];
+            byte[] oneByteArray = new byte[1];
+            int r = Read(oneByteArray, 0, 1);
+            return r != 0 ? oneByteArray[0] : -1;
         }
 
         public abstract void Write(byte[] buffer, int offset, int count);
@@ -781,11 +783,15 @@ namespace System.IO
         }
 
         // Writes one byte from the stream by calling Write(byte[], int, int).
+        // This implementation does not perform well because it allocates a new
+        // byte[] each time you call it, and should be overridden by any 
+        // subclass that maintains an internal buffer.  Then, it can help perf
+        // significantly for people who are writing one byte at a time.
         public virtual void WriteByte(byte value)
         {
-            Span<byte> oneByteSpan = stackalloc byte[1];
-            oneByteSpan[0] = value;
-            Write(oneByteSpan);
+            byte[] oneByteArray = new byte[1];
+            oneByteArray[0] = value;
+            Write(oneByteArray, 0, 1);
         }
 
         public static Stream Synchronized(Stream stream)

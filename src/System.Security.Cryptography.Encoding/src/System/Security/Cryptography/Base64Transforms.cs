@@ -52,13 +52,12 @@ namespace System.Security.Cryptography
 
         private static byte[] ConvertToBase64(byte[] inputBuffer, int inputOffset, int inputCount)
         {
-            Span<char> temp = stackalloc char[4];
-            Convert.TryToBase64Chars(inputBuffer.AsSpan(inputOffset, inputCount), temp, out int _);
-            Span<byte> bytes = stackalloc byte[4];
-            if (Encoding.ASCII.GetBytes(temp, bytes) != 4)
+            char[] temp = new char[4];
+            Convert.ToBase64CharArray(inputBuffer, inputOffset, inputCount, temp, 0);
+            byte[] tempBytes = Encoding.ASCII.GetBytes(temp);
+            if (tempBytes.Length != 4)
                 throw new CryptographicException(SR.Cryptography_SSE_InvalidDataSize);
-
-            return bytes.ToArray();
+            return tempBytes;
         }
 
         private static void ValidateTransformBlock(byte[] inputBuffer, int inputOffset, int inputCount)
