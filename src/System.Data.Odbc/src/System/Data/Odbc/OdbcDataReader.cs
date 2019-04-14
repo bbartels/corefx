@@ -495,7 +495,7 @@ namespace System.Data.Odbc
 
                 case ODBC32.SQL_TYPE.DECIMAL:
                 case ODBC32.SQL_TYPE.NUMERIC:
-                    return internalGetDecimal(i);
+                    return InternalGetDecimal(i);
 
                 case ODBC32.SQL_TYPE.SMALLINT:
                     return internalGetInt16(i);
@@ -548,8 +548,7 @@ namespace System.Data.Odbc
                     {
                         if (_dataCache.AccessIndex(i) == null)
                         {
-                            int dummy;
-                            bool isNotDbNull = QueryFieldInfo(i, ODBC32.SQL_C.BINARY, out dummy);
+                            bool isNotDbNull = QueryFieldInfo(i, ODBC32.SQL_C.BINARY, out _);
                             // if the value is DBNull, QueryFieldInfo will cache it
                             if (isNotDbNull)
                             {
@@ -871,7 +870,7 @@ namespace System.Data.Odbc
 
         public override decimal GetDecimal(int i)
         {
-            return (decimal)internalGetDecimal(i);
+            return (decimal)InternalGetDecimal(i);
         }
 
         // ---------------------------------------------------------------------------------------------- //
@@ -881,7 +880,7 @@ namespace System.Data.Odbc
         // Due to provider incompatibilities with SQL_DECIMAL or SQL_NUMERIC types we always read the value
         // as SQL_C_WCHAR and convert it back to the Decimal data type
         //
-        private object internalGetDecimal(int i)
+        private object InternalGetDecimal(int i)
         {
             if (_isRead)
             {
@@ -998,7 +997,8 @@ namespace System.Data.Odbc
                         // Char[] buffer for the junks
                         // StringBuilder for the actual string
                         //
-                        char[] rgChars = new char[cbMaxData / 2];
+                        int size = cbMaxData / 2;
+                        Span<char> rgChars = size > 32 ? new char[size] : stackalloc char[size];
 
                         // RFC 50002644: negative value cannot be used for capacity.
                         // in case of SQL_NO_TOTAL, set the capacity to cbMaxData, StringBuilder will automatically reallocate 
@@ -1015,7 +1015,7 @@ namespace System.Data.Odbc
                         {
                             cchJunk = cbActual / 2;
                             buffer.ReadChars(0, rgChars, 0, cchJunk);
-                            builder.Append(rgChars, 0, cchJunk);
+                            builder.Append(rgChars.Slice(0, cchJunk));
 
                             if (0 == cbMissing)
                             {
@@ -1483,7 +1483,6 @@ namespace System.Data.Odbc
             {
                 // Obtain _ALL_ the bytes...
                 // The first time GetData returns the true length (so we have to min it).
-                byte[] rgBytes;
                 int cbBufferLen = Buffer.Length - 4;
                 int cbActual;
                 int cbOffset = 0;
@@ -1492,6 +1491,7 @@ namespace System.Data.Odbc
                 {
                     CNativeBuffer buffer = Buffer;
 
+                    byte[] rgBytes;
                     if (ODBC32.SQL_NO_TOTAL != cbActual)
                     {
                         rgBytes = new byte[cbActual];
@@ -1722,8 +1722,7 @@ namespace System.Data.Odbc
         {
             // Never call GetData with anything larger than _buffer.Length-2.
             // We keep reallocating native buffers and it kills performance!!!
-            int dummy;
-            return GetData(i, sqlctype, Buffer.Length - 4, out dummy);
+            return GetData(i, sqlctype, Buffer.Length - 4, out _);
         }
 
         /// <summary>
@@ -2788,7 +2787,7 @@ namespace System.Data.Odbc
                 ((localcmdtext[1] == 's') || (localcmdtext[1] == 'S')))
             {
                 // aliased table, skip the alias name
-                localcmdtext = tokenstmt.NextToken();
+                _ = tokenstmt.NextToken();
                 localcmdtext = tokenstmt.NextToken();
                 if ((localcmdtext.Length > 0) && (localcmdtext[0] == ','))
                 {

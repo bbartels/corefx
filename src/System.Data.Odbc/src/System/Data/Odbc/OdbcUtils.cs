@@ -164,7 +164,7 @@ namespace System.Data.Odbc
 
                         //So we have to copy the raw bytes of the string ourself?!
 
-                        char[] rgChars;
+                        Span<char> rgChars;
                         int length;
                         Debug.Assert(value is string || value is char[], "Only string or char[] can be marshaled to WCHAR");
 
@@ -177,6 +177,7 @@ namespace System.Data.Odbc
                                 length = sizeorprecision;
                             }
 
+                            //TODO: Refactor when System.Memory exists, AsReadonlySpan
                             rgChars = ((string)value).ToCharArray(valueOffset, length);
                             Debug.Assert(rgChars.Length < (base.Length - valueOffset), "attempting to extend parameter buffer!");
 
