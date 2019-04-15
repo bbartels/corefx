@@ -326,17 +326,14 @@ namespace Microsoft.SqlServer.Server
     {
         internal override void Normalize(FieldInfo fi, object obj, Stream s)
         {
-            short value = (short)GetValue(fi, obj);
             Span<byte> b = stackalloc byte[2];
+            short value = (short)GetValue(fi, obj);
+            BitConverter.TryWriteBytes(b, value);
 
             if (!_skipNormalize)
             {
-                BinaryPrimitives.WriteInt16BigEndian(b, value);
+                b.Reverse();
                 b[0] ^= 0x80;
-            }
-            else
-            {
-                BinaryPrimitives.WriteInt16LittleEndian(b, value);
             }
 
             s.Write(b);
@@ -350,12 +347,10 @@ namespace Microsoft.SqlServer.Server
             if (!_skipNormalize)
             {
                 b[0] ^= 0x80;
-                SetValue(fi, recvr, BinaryPrimitives.ReadInt16BigEndian(b));
+                b.Reverse();
             }
-            else
-            {
-                SetValue(fi, recvr, BinaryPrimitives.ReadInt16LittleEndian(b));
-            }
+
+            SetValue(fi, recvr, BitConverter.ToInt16(b));
         }
 
         internal override int Size => 2;
@@ -367,14 +362,11 @@ namespace Microsoft.SqlServer.Server
         {
             ushort value = (ushort)GetValue(fi, obj);
             Span<byte> b = stackalloc byte[2];
+            BitConverter.TryWriteBytes(b, value);
 
             if (!_skipNormalize)
             {
-                BinaryPrimitives.WriteUInt16BigEndian(b, value);
-            }
-            else
-            {
-                BinaryPrimitives.WriteUInt16LittleEndian(b, value);
+                b.Reverse();
             }
 
             s.Write(b);
@@ -385,9 +377,12 @@ namespace Microsoft.SqlServer.Server
             Span<byte> b = stackalloc byte[2];
             s.Read(b);
 
-            SetValue(fi, recvr, _skipNormalize
-                ? BinaryPrimitives.ReadUInt16LittleEndian(b)
-                : BinaryPrimitives.ReadUInt16BigEndian(b));
+            if (_skipNormalize)
+            {
+                b.Reverse();
+            }
+
+            SetValue(fi, recvr, BitConverter.ToUInt16(b));
         }
 
         internal override int Size => 2;
@@ -398,15 +393,13 @@ namespace Microsoft.SqlServer.Server
         internal override void Normalize(FieldInfo fi, object obj, Stream s)
         {
             Span<byte> b = stackalloc byte[4];
+            int value = (int)GetValue(fi, obj);
+            BitConverter.TryWriteBytes(b, value);
 
             if (!_skipNormalize)
             {
-                BinaryPrimitives.WriteInt32BigEndian(b, (int)GetValue(fi, obj));
+                b.Reverse();
                 b[0] ^= 0x80;
-            }
-            else
-            {
-                BinaryPrimitives.WriteInt32LittleEndian(b, (int)GetValue(fi, obj));
             }
 
             s.Write(b);
@@ -420,12 +413,10 @@ namespace Microsoft.SqlServer.Server
             if (!_skipNormalize)
             {
                 b[0] ^= 0x80;
-                SetValue(fi, recvr, BinaryPrimitives.ReadInt32BigEndian(b));
+                b.Reverse();
             }
-            else
-            {
-                SetValue(fi, recvr, BinaryPrimitives.ReadInt32LittleEndian(b));
-            }
+
+            SetValue(fi, recvr, BitConverter.ToInt32(b));
         }
 
         internal override int Size => 4;
@@ -436,14 +427,12 @@ namespace Microsoft.SqlServer.Server
         internal override void Normalize(FieldInfo fi, object obj, Stream s)
         {
             Span<byte> b = stackalloc byte[4];
+            uint value = (uint)GetValue(fi, obj);
+            BitConverter.TryWriteBytes(b, value);
 
             if (!_skipNormalize)
             {
-                BinaryPrimitives.WriteUInt32BigEndian(b, (uint)GetValue(fi, obj));
-            }
-            else
-            {
-                BinaryPrimitives.WriteUInt32LittleEndian(b, (uint)GetValue(fi, obj));
+                b.Reverse();
             }
 
             s.Write(b);
@@ -454,9 +443,12 @@ namespace Microsoft.SqlServer.Server
             Span<byte> b = stackalloc byte[4];
             s.Read(b);
 
-            SetValue(fi, recvr, _skipNormalize
-                ? BinaryPrimitives.ReadInt32LittleEndian(b)
-                : BinaryPrimitives.ReadInt32BigEndian(b));
+            if (!_skipNormalize)
+            {
+                b.Reverse();
+            }
+
+            SetValue(fi, recvr, BitConverter.ToUInt32(b));
         }
 
         internal override int Size => 4;
@@ -467,16 +459,15 @@ namespace Microsoft.SqlServer.Server
         internal override void Normalize(FieldInfo fi, object obj, Stream s)
         {
             Span<byte> b = stackalloc byte[8];
+            long value = (long)GetValue(fi, obj);
+            BitConverter.TryWriteBytes(b, value);
 
             if (!_skipNormalize)
             {
-                BinaryPrimitives.WriteInt64BigEndian(b, (long)GetValue(fi, obj));
+                b.Reverse();
                 b[0] ^= 0x80;
             }
-            else
-            {
-                BinaryPrimitives.WriteInt64LittleEndian(b, (long)GetValue(fi, obj));
-            }
+
             s.Write(b);
         }
 
@@ -488,10 +479,10 @@ namespace Microsoft.SqlServer.Server
             if (!_skipNormalize)
             {
                 b[0] ^= 0x80;
-                SetValue(fi, recvr, BinaryPrimitives.ReadInt64BigEndian(b));
+                b.Reverse();
             }
 
-            SetValue(fi, recvr, BinaryPrimitives.ReadInt64LittleEndian(b));
+            SetValue(fi, recvr, BitConverter.ToInt64(b));
         }
 
         internal override int Size => 8;
@@ -503,14 +494,11 @@ namespace Microsoft.SqlServer.Server
         {
             Span<byte> b = stackalloc byte[8];
             ulong value = (ulong)GetValue(fi, obj);
+            BitConverter.TryWriteBytes(b, value);
 
             if (!_skipNormalize)
             {
-                BinaryPrimitives.WriteUInt64BigEndian(b, value);
-            }
-            else
-            {
-                BinaryPrimitives.WriteUInt64LittleEndian(b, value);
+                b.Reverse();
             }
 
             s.Write(b);
@@ -521,9 +509,12 @@ namespace Microsoft.SqlServer.Server
             Span<byte> b = stackalloc byte[8];
             s.Read(b);
 
-            SetValue(fi, recvr, _skipNormalize
-                ? BinaryPrimitives.ReadUInt64LittleEndian(b)
-                : BinaryPrimitives.ReadUInt64BigEndian(b));
+            if (_skipNormalize)
+            {
+                b.Reverse();
+            }
+
+            SetValue(fi, recvr, BitConverter.ToUInt64(b));
         }
 
         internal override int Size => 8;
@@ -533,13 +524,13 @@ namespace Microsoft.SqlServer.Server
     {
         internal override void Normalize(FieldInfo fi, object obj, Stream s)
         {
-            float f = (float)GetValue(fi, obj);
-            int value = BitConverter.SingleToInt32Bits(f);
+            float value = (float)GetValue(fi, obj);
             Span<byte> b = stackalloc byte[4];
+            BitConverter.TryWriteBytes(b, value);
 
             if (!_skipNormalize)
             {
-                BinaryPrimitives.WriteInt64BigEndian(b, value);
+                b.Reverse();
                 if ((b[0] & 0x80) == 0)
                 {
                     // This is a positive number.
@@ -553,14 +544,9 @@ namespace Microsoft.SqlServer.Server
                     // If all zeroes, means it was a negative zero.
                     // Treat it same as positive zero, so that
                     // the normalized key will compare equal.
-                    if (f < 0)
+                    if (value < 0)
                         FlipAllBits(b);
                 }
-            }
-
-            else
-            {
-                BinaryPrimitives.WriteInt64LittleEndian(b, value);
             }
 
             s.Write(b);
@@ -584,12 +570,10 @@ namespace Microsoft.SqlServer.Server
                     // This is a negative number.
                     FlipAllBits(b);
                 }
-                SetValue(fi, recvr, BitConverter.Int32BitsToSingle(BinaryPrimitives.ReadInt32BigEndian(b)));
+                b.Reverse();
             }
-            else
-            {
-                SetValue(fi, recvr, BitConverter.Int32BitsToSingle(BinaryPrimitives.ReadInt32LittleEndian(b)));
-            }
+
+            SetValue(fi, recvr, BitConverter.ToSingle(b));
         }
 
         internal override int Size => 4;
@@ -599,13 +583,13 @@ namespace Microsoft.SqlServer.Server
     {
         internal override void Normalize(FieldInfo fi, object obj, Stream s)
         {
-            double d = (double)GetValue(fi, obj);
-            long value = BitConverter.DoubleToInt64Bits(d);
+            double value = (double)GetValue(fi, obj);
             Span<byte> b = stackalloc byte[8];
+            BitConverter.TryWriteBytes(b, value);
 
             if (!_skipNormalize)
             {
-                BinaryPrimitives.WriteInt64BigEndian(b, value);
+                b.Reverse();
                 if ((b[0] & 0x80) == 0)
                 {
                     // This is a positive number.
@@ -615,7 +599,7 @@ namespace Microsoft.SqlServer.Server
                 else
                 {
                     // This is a negative number.
-                    if (d < 0)
+                    if (value < 0)
                     {
                         // If all zeroes, means it was a negative zero.
                         // Treat it same as positive zero, so that
@@ -623,10 +607,6 @@ namespace Microsoft.SqlServer.Server
                         FlipAllBits(b);
                     }
                 }
-            }
-            else
-            {
-                BinaryPrimitives.WriteInt64LittleEndian(b, value);
             }
 
             s.Write(b);
@@ -651,12 +631,10 @@ namespace Microsoft.SqlServer.Server
                     FlipAllBits(b);
                 }
 
-                SetValue(fi, recvr, BitConverter.DoubleToInt64Bits(BinaryPrimitives.ReadInt32BigEndian(b)));
+                b.Reverse();
             }
-            else
-            {
-                SetValue(fi, recvr, BitConverter.DoubleToInt64Bits(BinaryPrimitives.ReadInt32LittleEndian(b)));
-            }
+
+            SetValue(fi, recvr, BitConverter.ToDouble(b));
         }
 
         internal override int Size => 8;
