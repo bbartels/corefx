@@ -766,7 +766,9 @@ namespace System.IO
         {
             byte[] oneByteArray = new byte[1];
             int r = Read(oneByteArray, 0, 1);
-            return r != 0 ? oneByteArray[0] : -1;
+            if (r == 0)
+                return -1;
+            return oneByteArray[0];
         }
 
         public abstract void Write(byte[] buffer, int offset, int count);
