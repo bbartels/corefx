@@ -5,6 +5,7 @@ parameters:
   condition: succeeded()
   continueOnError: false
   runAsPublic: false
+  publishUsingPipelines: false
 phases:
   - phase: Asset_Registry_Publish
     displayName: Publish to Build Asset Registry
@@ -37,6 +38,7 @@ phases:
               /p:BuildAssetRegistryToken=$(MaestroAccessToken)
               /p:MaestroApiEndpoint=https://maestro-prod.westus2.cloudapp.azure.com
               /p:Configuration=$(_BuildConfig)
+              /p:PublishUsingPipelines=${{ parameters.publishUsingPipelines }}
           condition: ${{ parameters.condition }}
           continueOnError: ${{ parameters.continueOnError }}
         - task: PublishBuildArtifacts@1
