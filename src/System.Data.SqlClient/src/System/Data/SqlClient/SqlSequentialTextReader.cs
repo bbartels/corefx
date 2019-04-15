@@ -84,8 +84,8 @@ namespace System.Data.SqlClient
             // If there is data available try to read a char
             else
             {
-                Span<char> tempBuffer = stackalloc char[1];
-                int charsRead = InternalRead(tempBuffer);
+                char[] tempBuffer = new char[1];
+                int charsRead = InternalRead(tempBuffer, 0, 1);
                 if (charsRead == 1)
                 {
                     readChar = tempBuffer[0];
@@ -122,7 +122,7 @@ namespace System.Data.SqlClient
             }
 
             // If we need more data and there is data available, read
-            charsRead += InternalRead(buffer.AsSpan(index + charsRead, charsNeeded));
+            charsRead += InternalRead(buffer, index + charsRead, charsNeeded);
 
             return charsRead;
         }
@@ -199,7 +199,7 @@ namespace System.Data.SqlClient
                                                 byteBufferUsed += bytesReadFromStream;
                                                 if (byteBufferUsed > 0)
                                                 {
-                                                    charsRead += DecodeBytesToChars(byteBuffer, byteBufferUsed, buffer);
+                                                    charsRead += DecodeBytesToChars(byteBuffer, byteBufferUsed, buffer, adjustedIndex, charsNeeded);
                                                 }
                                                 completion.SetResult(charsRead);
                                             }
@@ -235,8 +235,7 @@ namespace System.Data.SqlClient
                                 if ((completedSynchronously) && (byteBufferUsed > 0))
                                 {
                                     // No more data needed, decode what we have
-                                    charsRead += DecodeBytesToChars(byteBuffer, byteBufferUsed,
-                                        buffer.AsSpan(adjustedIndex, charsNeeded));
+                                    charsRead += DecodeBytesToChars(byteBuffer, byteBufferUsed, buffer, adjustedIndex, charsNeeded);
                                 }
                             }
                             else
@@ -296,7 +295,10 @@ namespace System.Data.SqlClient
 
             // Wait for pending task
             var currentTask = _currentTask;
-            ((IAsyncResult) currentTask)?.AsyncWaitHandle.WaitOne();
+            if (currentTask != null)
+            {
+                ((IAsyncResult)currentTask).AsyncWaitHandle.WaitOne();
+            }
         }
 
         /// <summary>
@@ -304,20 +306,30 @@ namespace System.Data.SqlClient
         /// NOTE: This assumes that buffer, index and count are all valid, we're not closed (!IsClosed) and that there is data left (IsDataLeft())
         /// </summary>
         /// <param name="buffer"></param>
+        /// <param name="index"></param>
+        /// <param name="count"></param>
         /// <returns></returns>
-        private int InternalRead(Span<char> buffer)
+        private int InternalRead(char[] buffer, int index, int count)
         {
             Debug.Assert(buffer != null, "Null output buffer");
+            Debug.Assert((index >= 0) && (count >= 0) && (index + count <= buffer.Length), $"Bad count: {count} or index: {index}");
             Debug.Assert(!IsClosed, "Can't read while textreader is closed");
 
             try
             {
-                byte[] byteBuffer = PrepareByteBuffer(buffer.Length, out int byteBufferUsed);
+                int byteBufferUsed;
+                byte[] byteBuffer = PrepareByteBuffer(count, out byteBufferUsed);
                 byteBufferUsed += _reader.GetBytesInternalSequential(_columnIndex, byteBuffer, byteBufferUsed, byteBuffer.Length - byteBufferUsed);
 
-                return byteBufferUsed > 0
-                    ? DecodeBytesToChars(byteBuffer, byteBufferUsed, buffer)
-                    : 0;
+                if (byteBufferUsed > 0)
+                {
+                    return DecodeBytesToChars(byteBuffer, byteBufferUsed, buffer, index, count);
+                }
+                else
+                {
+                    // Nothing to read, or nothing read
+                    return 0;
+                }
             }
             catch (SqlException ex)
             {
@@ -379,15 +391,20 @@ namespace System.Data.SqlClient
         /// <param name="inBuffer">Buffer of bytes to decode</param>
         /// <param name="inBufferCount">Number of bytes to decode from the inBuffer</param>
         /// <param name="outBuffer">Buffer to write the characters to</param>
+        /// <param name="outBufferOffset">Offset to start writing to outBuffer at</param>
+        /// <param name="outBufferCount">Maximum number of characters to decode</param>
         /// <returns>The actual number of characters decoded</returns>
-        private int DecodeBytesToChars(byte[] inBuffer, int inBufferCount, Span<char> outBuffer)
+        private int DecodeBytesToChars(byte[] inBuffer, int inBufferCount, char[] outBuffer, int outBufferOffset, int outBufferCount)
         {
             Debug.Assert(inBuffer != null, "Null input buffer");
             Debug.Assert((inBufferCount > 0) && (inBufferCount <= inBuffer.Length), $"Bad inBufferCount: {inBufferCount}");
             Debug.Assert(outBuffer != null, "Null output buffer");
-            Debug.Assert((outBuffer.Length > 0), $"Bad outBuffer size: {outBuffer.Length}");
+            Debug.Assert((outBufferOffset >= 0) && (outBufferCount > 0) && (outBufferOffset + outBufferCount <= outBuffer.Length), $"Bad outBufferCount: {outBufferCount} or outBufferOffset: {outBufferOffset}");
 
-            _decoder.Convert(inBuffer.AsSpan(..inBufferCount), outBuffer, false, out int bytesUsed, out int charsRead, out bool completed);
+            int charsRead;
+            int bytesUsed;
+            bool completed;
+            _decoder.Convert(inBuffer, 0, inBufferCount, outBuffer, outBufferOffset, outBufferCount, false, out bytesUsed, out charsRead, out completed);
 
             // completed may be false and there is no spare bytes if the Decoder has stored bytes to use later
             if ((!completed) && (bytesUsed < inBufferCount))
