@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <ProjectGuid>{7BAD100F-AD6B-490A-AF7C-8E3854E812C0}</ProjectGuid>
     <AssemblyName>System.Data.Odbc</AssemblyName>
@@ -155,6 +155,7 @@
     <Reference Include="System.Diagnostics.TraceSource" />
     <Reference Include="System.Globalization" />
     <Reference Include="System.Linq" />
+    <Reference Include="System.Memory" />
     <Reference Include="System.Resources.ResourceManager" />
     <Reference Include="System.Runtime" />
     <Reference Include="System.Runtime.Extensions" />

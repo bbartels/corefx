@@ -126,12 +126,12 @@ namespace System.Data.ProviderBase
         internal byte[] ReadBytes(int offset, int length)
         {
             byte[] value = new byte[length];
-            ReadBytes(offset, value, 0, length);
+            ReadBytes(offset, value);
             return value;
         }
 
         //TODO: Refactor signature to remove startIndex and length when System.Memory
-        internal void ReadBytes(int offset, Span<byte> destination, int start, int length)
+        internal void ReadBytes(int offset, Span<byte> destination)
         {
             offset += BaseOffset;
             Validate(offset, destination.Length);
@@ -166,13 +166,12 @@ namespace System.Data.ProviderBase
         }
 
         //TODO: Refactor signature to remove startIndex and length when System.Memory
-        internal void ReadChars(int offset, Span<char> destination, int startIndex, int length)
+        internal void ReadChars(int offset, Span<char> destination)
         {
             offset += BaseOffset;
-            Validate(offset, 2 * length);
+            Validate(offset, 2 * destination.Length);
             Debug.Assert(0 == offset % ADP.PtrSize, "invalid alignment");
             Debug.Assert(null != destination, "null destination");
-            Debug.Assert(startIndex + length <= destination.Length, "destination too small");
 
             bool mustRelease = false;
             RuntimeHelpers.PrepareConstrainedRegions();
@@ -183,7 +182,7 @@ namespace System.Data.ProviderBase
                 IntPtr ptr = ADP.IntPtrOffset(DangerousGetHandle(), offset);
                 unsafe
                 {
-                    new Span<char>(ptr.ToPointer(), length).CopyTo(destination);
+                    new Span<char>(ptr.ToPointer(), destination.Length).CopyTo(destination);
                 }
             }
             finally
@@ -281,6 +280,7 @@ namespace System.Data.ProviderBase
             return value;
         }
 
+        //TODO: Remove unused method?
         internal void ReadInt32Array(int offset, int[] destination, int startIndex, int length)
         {
             offset += BaseOffset;
@@ -426,13 +426,11 @@ namespace System.Data.ProviderBase
             }
         }
 
-        //TODO: Refactor signature to remove startIndex and length when System.Memory
-        internal void WriteBytes(int offset, ReadOnlySpan<byte> source, int startIndex, int length)
+        internal void WriteBytes(int offset, ReadOnlySpan<byte> source)
         {
             offset += BaseOffset;
-            Validate(offset, length);
+            Validate(offset, source.Length);
             Debug.Assert(0 == offset % ADP.PtrSize, "invalid alignment");
-            Debug.Assert(startIndex + length <= source.Length, "source too small");
 
             bool mustRelease = false;
             RuntimeHelpers.PrepareConstrainedRegions();
@@ -443,7 +441,7 @@ namespace System.Data.ProviderBase
                 IntPtr ptr = ADP.IntPtrOffset(DangerousGetHandle(), offset);
                 unsafe
                 {
-                    source.Slice(startIndex, length).CopyTo(new Span<byte>(ptr.ToPointer(), length));
+                    source.CopyTo(new Span<byte>(ptr.ToPointer(), source.Length));
                 }
             }
             finally
@@ -455,14 +453,12 @@ namespace System.Data.ProviderBase
             }
         }
 
-        //TODO: Refactor signature to remove startIndex and length when System.Memory
-        internal void WriteCharArray(int offset, ReadOnlySpan<char> source, int startIndex, int length)
+        internal void WriteCharArray(int offset, ReadOnlySpan<char> source)
         {
             offset += BaseOffset;
-            Validate(offset, 2 * length);
+            Validate(offset, 2 * source.Length);
             Debug.Assert(0 == offset % ADP.PtrSize, "invalid alignment");
             Debug.Assert(null != source, "null source");
-            Debug.Assert(startIndex + length <= source.Length, "source too small");
 
             bool mustRelease = false;
             RuntimeHelpers.PrepareConstrainedRegions();
@@ -473,7 +469,7 @@ namespace System.Data.ProviderBase
                 IntPtr ptr = ADP.IntPtrOffset(DangerousGetHandle(), offset);
                 unsafe
                 {
-                    source.Slice(startIndex, length).CopyTo(new Span<char>(ptr.ToPointer(), length));
+                    source.CopyTo(new Span<char>(ptr.ToPointer(), source.Length));
                 }
             }
             finally
@@ -514,14 +510,12 @@ namespace System.Data.ProviderBase
             }
         }
 
-        //TODO: Refactor signature to remove startIndex and length when System.Memory
-        internal void WriteInt16Array(int offset, ReadOnlySpan<short> source, int startIndex, int length)
+        internal void WriteInt16Array(int offset, ReadOnlySpan<short> source)
         {
             offset += BaseOffset;
-            Validate(offset, 2 * length);
+            Validate(offset, 2 * source.Length);
             Debug.Assert(0 == offset % ADP.PtrSize, "invalid alignment");
             Debug.Assert(null != source, "null source");
-            Debug.Assert(startIndex + length <= source.Length, "source too small");
 
             bool mustRelease = false;
             RuntimeHelpers.PrepareConstrainedRegions();
@@ -532,7 +526,7 @@ namespace System.Data.ProviderBase
                 IntPtr ptr = ADP.IntPtrOffset(DangerousGetHandle(), offset);
                 unsafe
                 {
-                    source.Slice(startIndex, length).CopyTo(new Span<short>(ptr.ToPointer(), length));
+                    source.CopyTo(new Span<short>(ptr.ToPointer(), source.Length));
                 }
             }
             finally
@@ -672,7 +666,7 @@ namespace System.Data.ProviderBase
         {
             // faster than Marshal.PtrToStructure(offset, typeof(Guid))
             Span<byte> buffer = stackalloc byte[16];
-            ReadBytes(offset, buffer, 0, 16);
+            ReadBytes(offset, buffer);
             return new Guid(buffer);
         }
         internal void WriteGuid(int offset, Guid value)
@@ -697,7 +691,7 @@ namespace System.Data.ProviderBase
                 unchecked((short)value.Month),
                 unchecked((short)value.Day),
             };
-            WriteInt16Array(offset, buffer, 0, 3);
+            WriteInt16Array(offset, buffer);
         }
 
         internal TimeSpan ReadTime(int offset)
@@ -716,7 +710,7 @@ namespace System.Data.ProviderBase
                 unchecked((short)value.Minutes),
                 unchecked((short)value.Seconds),
             };
-            WriteInt16Array(offset, buffer, 0, 3);
+            WriteInt16Array(offset, buffer);
         }
 
         internal DateTime ReadDateTime(int offset)
@@ -744,7 +738,7 @@ namespace System.Data.ProviderBase
                 unchecked((short)value.Minute),
                 unchecked((short)value.Second),
             };
-            WriteInt16Array(offset, buffer, 0, 6);
+            WriteInt16Array(offset, buffer);
             WriteInt32(offset + 12, ticks);
         }
 
@@ -752,7 +746,7 @@ namespace System.Data.ProviderBase
         {
             //TODO: Refactor when MemoryMarshal available
             Span<byte> buff = stackalloc byte[20];
-            ReadBytes(offset, buff, 1, 19);
+            ReadBytes(offset, buff.Slice(1, 19));
             byte[] bits = buff.ToArray();
 
             int[] buffer = new int[4];
@@ -774,18 +768,18 @@ namespace System.Data.ProviderBase
         internal void WriteNumeric(int offset, decimal value, byte precision)
         {
             //TODO: Refactor when MemoryMarshal available
-            int[] tmp = decimal.GetBits(value);
-            byte[] buffer = new byte[20];
+            Span<byte> tmp = MemoryMarshal.Cast<int, byte>(decimal.GetBits(value));
+            Span<byte> buffer = stackalloc byte[20];
 
             buffer[1] = precision;
-            Buffer.BlockCopy(tmp, 14, buffer, 2, 2); // copy sign and scale
+            tmp.Slice(14, 2).CopyTo(buffer.Slice(2));
             buffer[3] = (byte)((0 == buffer[3]) ? 1 : 0); // flip sign for native
-            Buffer.BlockCopy(tmp, 0, buffer, 4, 12);
+            tmp.Slice(0, 12).CopyTo(buffer.Slice(4));
             buffer[16] = 0;
             buffer[17] = 0;
             buffer[18] = 0;
             buffer[19] = 0;
-            WriteBytes(offset, buffer, 1, 19);
+            WriteBytes(offset, buffer.Slice(1, 19));
         }
 
         [ConditionalAttribute("DEBUG")]

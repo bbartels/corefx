@@ -1014,7 +1014,7 @@ namespace System.Data.Odbc
                         do
                         {
                             cchJunk = cbActual / 2;
-                            buffer.ReadChars(0, rgChars, 0, cchJunk);
+                            buffer.ReadChars(0, rgChars.Slice(0, cchJunk));
                             builder.Append(rgChars.Slice(0, cchJunk));
 
                             if (0 == cbMissing)
@@ -1452,7 +1452,7 @@ namespace System.Data.Odbc
                     int cchRead = cbRead / 2;
                     if (buffer != null)
                     {
-                        internalNativeBuffer.ReadChars(0, (char[])buffer, bufferIndex, cchRead);
+                        internalNativeBuffer.ReadChars(0, ((char[])buffer).AsSpan(bufferIndex, cchRead));
                         bufferIndex += cchRead;
                     }
                     totalBytesOrCharsRead += cchRead;
@@ -1461,7 +1461,7 @@ namespace System.Data.Odbc
                 {
                     if (buffer != null)
                     {
-                        internalNativeBuffer.ReadBytes(0, (byte[])buffer, bufferIndex, cbRead);
+                        internalNativeBuffer.ReadBytes(0, ((byte[])buffer).AsSpan(bufferIndex, cbRead));
                         bufferIndex += cbRead;
                     }
                     totalBytesOrCharsRead += cbRead;
@@ -1495,7 +1495,7 @@ namespace System.Data.Odbc
                     if (ODBC32.SQL_NO_TOTAL != cbActual)
                     {
                         rgBytes = new byte[cbActual];
-                        Buffer.ReadBytes(0, rgBytes, cbOffset, Math.Min(cbActual, cbBufferLen));
+                        Buffer.ReadBytes(0, rgBytes.AsSpan(cbOffset, Math.Min(cbActual, cbBufferLen)));
 
                         // Chunking.  The data may be larger than our native buffer.  In which case
                         // instead of growing the buffer (out of control), we will read in chunks to
@@ -1508,7 +1508,7 @@ namespace System.Data.Odbc
                             Debug.Assert(flag, "internalGetBytes - unexpected invalid result inside if-block");
 
                             cbOffset += cbBufferLen;
-                            buffer.ReadBytes(0, rgBytes, cbOffset, Math.Min(cbActual, cbBufferLen));
+                            buffer.ReadBytes(0, rgBytes.AsSpan(cbOffset, Math.Min(cbActual, cbBufferLen)));
                         }
                     }
                     else
@@ -1521,7 +1521,7 @@ namespace System.Data.Odbc
                             junkSize = (ODBC32.SQL_NO_TOTAL != cbActual) ? cbActual : cbBufferLen;
                             rgBytes = new byte[junkSize];
                             totalSize += junkSize;
-                            buffer.ReadBytes(0, rgBytes, 0, junkSize);
+                            buffer.ReadBytes(0, rgBytes.AsSpan(0, junkSize));
                             junkArray.Add(rgBytes);
                         }
                         while ((ODBC32.SQL_NO_TOTAL == cbActual) && GetData(i, ODBC32.SQL_C.BINARY, cbBufferLen, out cbActual));
