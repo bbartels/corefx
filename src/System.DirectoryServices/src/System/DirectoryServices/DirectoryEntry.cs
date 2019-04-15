@@ -201,12 +201,9 @@ namespace System.DirectoryServices
                 {
                     // oddly, the value comes back as a string with no dashes from LDAP
                     Span<byte> intGuid = stackalloc byte[16];
-                    Span<char> indices = stackalloc char[2];
                     for (int j = 0; j < 16; j++)
                     {
-                        indices[0] = guid[j * 2];
-                        indices[1] = guid[j * 2 + 1];
-                        intGuid[j] = Convert.ToByte(new string(indices), 16);
+                        intGuid[j] = (byte)((Uri.FromHex(guid[j * 2]) << 4) + Uri.FromHex(guid[j * 2 + 1]));
                     }
                     return new Guid(intGuid);
                     // return new Guid(guid.Substring(0, 8) + "-" + guid.Substring(8, 4) + "-" + guid.Substring(12, 4) + "-" + guid.Substring(16, 4) + "-" + guid.Substring(20));
