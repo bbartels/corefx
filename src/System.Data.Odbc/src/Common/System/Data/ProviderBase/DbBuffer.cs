@@ -130,7 +130,6 @@ namespace System.Data.ProviderBase
             return value;
         }
 
-        //TODO: Refactor signature to remove startIndex and length when System.Memory
         internal void ReadBytes(int offset, Span<byte> destination)
         {
             offset += BaseOffset;
@@ -165,7 +164,6 @@ namespace System.Data.ProviderBase
             return unchecked((char)value);
         }
 
-        //TODO: Refactor signature to remove startIndex and length when System.Memory
         internal void ReadChars(int offset, Span<char> destination)
         {
             offset += BaseOffset;
@@ -744,21 +742,20 @@ namespace System.Data.ProviderBase
 
         internal decimal ReadNumeric(int offset)
         {
-            //TODO: Refactor when MemoryMarshal available
-            Span<byte> buff = stackalloc byte[20];
-            ReadBytes(offset, buff.Slice(1, 19));
-            byte[] bits = buff.ToArray();
+            Span<byte> bits = stackalloc byte[20];
+            ReadBytes(offset, bits.Slice(1, 19));
 
+            //TODO: Refactor when span -> decimal
             int[] buffer = new int[4];
             buffer[3] = ((int)bits[2]) << 16; // scale
             if (0 == bits[3])
             {
                 buffer[3] |= unchecked((int)0x80000000); //sign
             }
-            buffer[0] = BitConverter.ToInt32(bits, 4);     // low
-            buffer[1] = BitConverter.ToInt32(bits, 8);     // mid
-            buffer[2] = BitConverter.ToInt32(bits, 12);     // high
-            if (0 != BitConverter.ToInt32(bits, 16))
+            buffer[0] = BitConverter.ToInt32(bits.Slice(4));     // low
+            buffer[1] = BitConverter.ToInt32(bits.Slice(8));     // mid
+            buffer[2] = BitConverter.ToInt32(bits.Slice(12));     // high
+            if (0 != BitConverter.ToInt32(bits.Slice(16)))
             {
                 throw ADP.NumericToDecimalOverflow();
             }
@@ -767,7 +764,7 @@ namespace System.Data.ProviderBase
 
         internal void WriteNumeric(int offset, decimal value, byte precision)
         {
-            //TODO: Refactor when MemoryMarshal available
+            //TODO: Refactor when decimal -> span
             Span<byte> tmp = MemoryMarshal.Cast<int, byte>(decimal.GetBits(value));
             Span<byte> buffer = stackalloc byte[20];
 
