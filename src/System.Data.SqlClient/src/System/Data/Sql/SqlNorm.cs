@@ -326,7 +326,7 @@ namespace Microsoft.SqlServer.Server
     {
         internal override void Normalize(FieldInfo fi, object obj, Stream s)
         {
-            Span<byte> b = stackalloc byte[2];
+            Span<byte> b = stackalloc byte[sizeof(short)];
             short value = (short)GetValue(fi, obj);
             BitConverter.TryWriteBytes(b, value);
 
@@ -361,7 +361,7 @@ namespace Microsoft.SqlServer.Server
         internal override void Normalize(FieldInfo fi, object obj, Stream s)
         {
             ushort value = (ushort)GetValue(fi, obj);
-            Span<byte> b = stackalloc byte[2];
+            Span<byte> b = stackalloc byte[sizeof(ushort)];
             BitConverter.TryWriteBytes(b, value);
 
             if (!_skipNormalize)
@@ -392,7 +392,7 @@ namespace Microsoft.SqlServer.Server
     {
         internal override void Normalize(FieldInfo fi, object obj, Stream s)
         {
-            Span<byte> b = stackalloc byte[4];
+            Span<byte> b = stackalloc byte[sizeof(int)];
             int value = (int)GetValue(fi, obj);
             BitConverter.TryWriteBytes(b, value);
 
@@ -426,7 +426,7 @@ namespace Microsoft.SqlServer.Server
     {
         internal override void Normalize(FieldInfo fi, object obj, Stream s)
         {
-            Span<byte> b = stackalloc byte[4];
+            Span<byte> b = stackalloc byte[sizeof(uint)];
             uint value = (uint)GetValue(fi, obj);
             BitConverter.TryWriteBytes(b, value);
 
@@ -458,7 +458,7 @@ namespace Microsoft.SqlServer.Server
     {
         internal override void Normalize(FieldInfo fi, object obj, Stream s)
         {
-            Span<byte> b = stackalloc byte[8];
+            Span<byte> b = stackalloc byte[sizeof(long)];
             long value = (long)GetValue(fi, obj);
             BitConverter.TryWriteBytes(b, value);
 
@@ -492,7 +492,7 @@ namespace Microsoft.SqlServer.Server
     {
         internal override void Normalize(FieldInfo fi, object obj, Stream s)
         {
-            Span<byte> b = stackalloc byte[8];
+            Span<byte> b = stackalloc byte[sizeof(ulong)];
             ulong value = (ulong)GetValue(fi, obj);
             BitConverter.TryWriteBytes(b, value);
 
@@ -525,7 +525,7 @@ namespace Microsoft.SqlServer.Server
         internal override void Normalize(FieldInfo fi, object obj, Stream s)
         {
             float value = (float)GetValue(fi, obj);
-            Span<byte> b = stackalloc byte[4];
+            Span<byte> b = stackalloc byte[sizeof(float)];
             BitConverter.TryWriteBytes(b, value);
 
             if (!_skipNormalize)
@@ -584,7 +584,7 @@ namespace Microsoft.SqlServer.Server
         internal override void Normalize(FieldInfo fi, object obj, Stream s)
         {
             double value = (double)GetValue(fi, obj);
-            Span<byte> b = stackalloc byte[8];
+            Span<byte> b = stackalloc byte[sizeof(double)];
             BitConverter.TryWriteBytes(b, value);
 
             if (!_skipNormalize)
