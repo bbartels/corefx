@@ -106,6 +106,7 @@
     <Compile Include="System\LazyOfTMetadataTests.cs" />
     <Compile Include="System\MarshalByRefObjectTests.cs" />
     <Compile Include="System\MemberAccessExceptionTests.cs" />
+    <Compile Include="System\MemoryExtensions.SplitTests.cs" />
     <Compile Include="System\MethodAccessExceptionTests.cs" />
     <Compile Include="System\MissingFieldExceptionTests.cs" />
     <Compile Include="System\MissingMemberExceptionTests.cs" />
